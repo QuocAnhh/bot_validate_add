@@ -1,70 +1,59 @@
 # Tổng quan dự án Chatbot Xác thực Địa chỉ
 
-Đây là tài liệu giải thích chi tiết về cấu trúc thư mục và luồng hoạt động của dự án chatbot.
+Đây là tài liệu giải thích chi tiết về cấu trúc thư mục và luồng hoạt động của dự án, được xây dựng trên kiến trúc **Tool Calling** (Function Calling) tiên tiến của Google Gemini.
 
 ## I. Cấu trúc thư mục
 
-Dự án được cấu trúc theo module để đảm bảo code sạch sẽ, dễ bảo trì và mở rộng.
+Cấu trúc thư mục được tổ chức theo module để đảm bảo code sạch sẽ và dễ mở rộng.
 
 ```
 test_api_map/
 ├── app/
-│   ├── __init__.py             # Đánh dấu thư mục app là một package Python
-│   ├── main.py                 # Khởi tạo ứng dụng FastAPI, cấu hình middleware (CORS, logging)
+│   ├── main.py                 # khởi tạo FastAPI
 │   ├── api/
-│   │   ├── __init__.py
-│   │   └── routes.py           # Định nghĩa tất cả các API endpoint (VD: /chat/stream, /health)
+│   │   └── routes.py           # define API endpoint
 │   ├── core/
-│   │   ├── __init__.py
-│   │   └── config.py           # Tải các biến cấu hình và khóa API từ file .env
+│   │   └── config.py           # tải các biến config
 │   ├── logic/
-│   │   ├── __init__.py
-│   │   └── chatbot.py          # Chứa logic cốt lõi của chatbot, bao gồm cả máy trạng thái (state machine)
+│   │   ├── chatbot.py          # luồng xử lý chính của chatbot
+│   │   └── tools.py            # define tool cho LLM
 │   ├── schemas/
-│   │   ├── __init__.py
-│   │   └── chat.py             # Định nghĩa các Pydantic model để xác thực dữ liệu request (payload)
+│   │   └── chat.py             # Pydantic model để verify data
 │   ├── services/
-│   │   ├── __init__.py
-│   │   ├── gemini.py           # Client để tương tác với Google Gemini API
-│   │   └── goong.py            # Client để tương tác với Goong Maps API
+│   │   ├── gemini.py           # Client interact với Google Gemini API
+│   │   └── goong.py            # Client interact với Goong Maps API
 │   └── state/
-│       ├── __init__.py
-│       └── manager.py          # Quản lý trạng thái của các cuộc hội thoại (lưu trữ trong bộ nhớ)
-├── main.py                     # Entrypoint - Điểm bắt đầu để chạy ứng dụng bằng uvicorn
-├── confirmed_addresses.csv     # File CSV để lưu lại các địa chỉ đã được xác nhận thành công
-├── requirements.txt            # Danh sách các thư viện Python cần thiết cho dự án
-└── .env                        # (File người dùng tự tạo) Chứa các khóa API bí mật
+│       └── manager.py          # Manage trạng thái các cuộc hội thoại
+├── main.py                     # Entrypoint để chạy ứng dụng
+└── requirements.txt            # thư viện python
 ```
 
-## II. Luồng hoạt động (Workflow)
+## II. Luồng hoạt động - Kiến trúc Tool Calling
 
-Luồng xử lý chính bắt đầu khi có một request được gửi đến endpoint `/chat/stream`.
+Kiến trúc cũ đã được thay thế hoàn toàn bằng một luồng xử lý mạnh mẽ và linh hoạt, trong đó LLM được trao quyền để "hành động" thay vì chỉ "trả lời".
 
-1.  **Tiếp nhận Request:**
-    *   Live-demo gửi một HTTP POST request đến `/chat/stream`.
-    *   `app/api/routes.py` tiếp nhận request này. Dữ liệu (payload) được validate dựa trên Pydantic model `StreamChatRequest` trong `app/schemas/chat.py`.
+### **Khái niệm cốt lõi: "Công cụ" (Tool)**
 
-2.  **Quản lý Trạng thái:**
-    *   Hàm `stream_chat_handler` trong `routes.py` gọi hàm `get_or_create_conversation` từ `app/state/manager.py`.
-    *   Hàm này sẽ tìm kiếm cuộc hội thoại dựa trên `conversation_id`. Nếu chưa có, nó sẽ tạo một đối tượng `ConversationData` mới và lưu vào một dictionary trong bộ nhớ. Nếu đã có, nó sẽ lấy ra dữ liệu state hiện tại.
+Thay vì bắt LLM trả về một định dạng JSON tự chế, chúng ta định nghĩa các hàm Python của mình (ví dụ: `search_address`) như những "công cụ" mà LLM có thể gọi.
 
-3.  **Xử lý Logic Chatbot:**
-    *   Endpoint sau đó gọi hàm `chatbot_logic_generator` trong `app/logic/chatbot.py`, truyền vào dữ liệu state (`conv_data`) và tin nhắn của người dùng.
-    *   Đây là nơi diễn ra "bộ não" của chatbot, hoạt động như một máy trạng thái (state machine):
-        *   **`INITIAL`**: Nếu là tin nhắn đầu tiên, bot gửi lời chào và yêu cầu địa chỉ.
-        *   **`WAITING_FOR_ADDRESS`**: Khi nhận được địa chỉ, bot gọi `goong_client.autocomplete()` (từ `app/services/goong.py`).
-        *   **Xử lý kết quả từ Goong:**
-            *   **Nhiều kết quả**: Nếu API trả về nhiều hơn một gợi ý, bot lưu lại 3 gợi ý hàng đầu, chuyển state sang `WAITING_FOR_CLARIFICATION` và dùng Gemini để tạo câu hỏi yêu cầu người dùng chọn.
-            *   **Một kết quả**: Nếu chỉ có một gợi ý, bot sẽ lấy `place_id` và gọi `goong_client.get_place_details()` ngay lập tức.
-            *   **Không có kết quả**: Bot thông báo không tìm thấy và yêu cầu nhập lại.
-        *   **`WAITING_FOR_CLARIFICATION`**: Bot chờ người dùng nhập số thứ tự (1, 2, 3) tương ứng với địa chỉ họ muốn. Sau khi người dùng chọn, bot lấy `place_id` và gọi `get_place_details`.
-        *   **Lấy chi tiết và chờ xác nhận**: Sau khi `get_place_details` trả về thông tin chi tiết (địa chỉ đầy đủ, lat, lng), bot lưu các thông tin này, chuyển state sang `WAITING_FOR_CONFIRMATION` và yêu cầu người dùng xác nhận lần cuối.
-        *   **`WAITING_FOR_CONFIRMATION`**:
-            *   Nếu người dùng trả lời "đúng", bot gọi hàm `log_confirmed_address` để ghi vào file `confirmed_addresses.csv`, sau đó gửi lời cảm ơn và kết thúc.
-            *   Nếu người dùng trả lời "sai", bot tăng biến đếm `retry_count` và yêu cầu cung cấp lại thông tin.
+-   **Định nghĩa (Schema):** Trong `app/logic/tools.py`, chúng ta mô tả cho LLM biết có một công cụ tên là `search_address_in_vietnam`, nó dùng để làm gì và cần tham số `query` là một chuỗi địa chỉ.
+-   **Trao quyền:** Khi gọi API Gemini, chúng ta nói với nó: "Đây là cuộc hội thoại, và đây là bộ công cụ của anh. Hãy tự quyết định khi nào cần dùng."
 
-4.  **Tạo phản hồi bằng AI:**
-    *   Trong suốt quá trình, mỗi khi cần tạo một câu trả lời tự nhiên, `chatbot.py` sẽ gọi hàm `gemini_client.generate_response()` (từ `app/services/gemini.py`) với một prompt đã được xây dựng tùy theo ngữ cảnh.
+### **Vòng lặp xử lý (The Loop)**
 
-5.  **Streaming Phản hồi:**
-    *   Toàn bộ quá trình trả lời được thực hiện dưới dạng streaming (Server-Sent Events), giúp phản hồi được gửi đến client ngay lập tức mà không cần chờ toàn bộ logic xử lý xong. 
+Toàn bộ logic giờ đây xoay quanh một vòng lặp thông minh trong `app/logic/chatbot.py`:
+
+1.  **Gửi yêu cầu & Công cụ cho LLM:**
+    *   Toàn bộ lịch sử cuộc trò chuyện và danh sách các công cụ có sẵn (`address_validation_tool`) được gửi đến Gemini.
+
+2.  **LLM ra quyết định:**
+    *   LLM phân tích cuộc trò chuyện. Nó sẽ tự quyết định một trong hai hướng:
+        *   **A) Trả lời trực tiếp:** Nếu người dùng chỉ chào hỏi hoặc câu nói không liên quan đến địa chỉ, LLM sẽ tạo ra một câu trả lời văn bản bình thường.
+        *   **B) Gọi công cụ:** Nếu người dùng cung cấp một địa chỉ, LLM sẽ nhận ra rằng nó cần phải "hành động". Nó sẽ không trả lời, mà thay vào đó tạo ra một **lệnh gọi hàm (function call)**. Ví dụ: `function_call: search_address_in_vietnam(query='công viên hòa bình, hà nội')`.
+
+3.  **Backend thực thi & Phản hồi:**
+    *   **Trường hợp A (Trả lời trực tiếp):** Backend nhận câu trả lời văn bản và gửi thẳng cho người dùng. Vòng lặp kết thúc.
+    *   **Trường hợp B (Gọi công cụ):**
+        *   **3a. Thực thi:** Backend nhận lệnh gọi hàm, trích xuất tên hàm (`search_address_in_vietnam`) và các tham số (`query=...`). Sau đó, nó thực sự gọi hàm Python tương ứng (`goong_client.autocomplete(query)`).
+        *   **3b. Gửi lại kết quả:** Sau khi có kết quả từ Goong API, backend sẽ gọi Gemini **lần thứ hai**. Lần này, nó gửi lại toàn bộ lịch sử chat, cộng thêm một tin nhắn đặc biệt có nội dung: "Thưa sếp, tôi đã thực thi xong lệnh gọi hàm `search_address_in_vietnam` của sếp, và đây là kết quả... `(dữ liệu từ Goong)`".
+        *   **3c. LLM tổng hợp câu trả lời cuối cùng:** Nhận được dữ liệu thực tế từ công cụ, LLM giờ đã có đủ mọi thông tin cần thiết. Nó sẽ phân tích dữ liệu này và tạo ra một câu trả lời cuối cùng, hoàn chỉnh và thông minh để gửi cho người dùng.

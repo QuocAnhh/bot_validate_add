@@ -5,42 +5,40 @@ from datetime import datetime
 import logging
 
 from app.schemas.chat import StreamChatRequest
-from app.state.manager import get_or_create_conversation, conversations, ConversationData
 from app.logic.chatbot import chatbot_logic_generator
+from app.state.manager import conversation_manager
+from sse_starlette.sse import EventSourceResponse
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
 @router.post("/chat/stream")
 async def stream_chat_handler(request: StreamChatRequest):
-    conv_data: ConversationData = get_or_create_conversation(request.conversation_id)
-    user_message = request.message.strip()
+    """
+    endpoint xử lý yêu cầu chat và stream response
+    """
+    try:
+        # lấy hoặc tạo session
+        conv_data = conversation_manager.get_or_create_conversation(request.conversation_id)
 
-    async def event_stream():
-        """
-        Wrapper generator that calls the main logic and ensures the [DONE]
-        message is sent when the logic generator is exhausted.
-        """
-        try:
-            async for chunk in chatbot_logic_generator(conv_data, user_message, request.conversation_id):
-                yield chunk
-            
-            conv_data.created_at = datetime.now()
-        
-        except Exception as e:
-            logger.error(f"Error in event_stream wrapper: {e}", exc_info=True)
-            yield f"data: {json.dumps({'error': 'An unexpected server error occurred.'})}\n\n"
-        finally:
-            logger.debug(f"Ending stream for conversation {request.conversation_id}")
-            yield "data: [DONE]\n\n"
-
-    return StreamingResponse(event_stream(), media_type="text/event-stream")
+        # logic chatbot
+        return EventSourceResponse(
+            chatbot_logic_generator(
+                conv_data=conv_data,
+                user_message=request.message,
+                conversation_id=request.conversation_id
+            )
+        )
+    except Exception as e:
+        logger.error(f"Error in stream_chat_handler: {e}", exc_info=True)
+        # trả về JSON response cho lỗi
+        error_msg = {"error": "An unexpected server error occurred."}
+        return StreamingResponse(
+            iter([f"data: {json.dumps(error_msg)}\n\n"]),
+            status_code=500,
+            media_type="text/event-stream"
+        )
 
 @router.get("/health")
 async def health_check():
-    """Health check endpoint to monitor the application's status."""
-    return {
-        "status": "healthy",
-        "active_conversations": len(conversations),
-        "timestamp": datetime.now().isoformat()
-    } 
+    return {"status": "ok"} 

@@ -1,63 +1,40 @@
-from enum import Enum
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional
-from datetime import datetime, timedelta
+import logging
+from typing import Dict, List, Any
 
-# --- Enums and Data Classes for State Management ---
+from google.generativeai.protos import Content, Part
 
-class ConversationState(Enum):
-    """Defines the possible states in the conversation flow."""
-    INITIAL = "initial"
-    WAITING_FOR_ADDRESS = "waiting_for_address"
-    WAITING_FOR_CONFIRMATION = "waiting_for_confirmation"
-    WAITING_FOR_DISTRICT = "waiting_for_district"
-    WAITING_FOR_CLARIFICATION = "waiting_for_clarification"
-    CONFIRMING = "confirming"
-    COMPLETED = "completed"
+logger = logging.getLogger(__name__)
 
-@dataclass
 class ConversationData:
-    """Holds all data for a single conversation session."""
-    conversation_id: str
-    state: ConversationState = ConversationState.INITIAL
-    address_raw: Optional[str] = None
-    city_hint: Optional[str] = None
-    retry_count: int = 0
-    potential_address: Optional[str] = None
-    potential_lat: Optional[float] = None
-    potential_lng: Optional[float] = None
-    potential_addresses: Optional[List[Dict]] = None # To store multiple address candidates
-    created_at: datetime = field(default_factory=datetime.now)
+    """lưu trữ dữ liệu cuộc trò chuyện"""
+    def __init__(self):
+        self.history: List[Content] = []
+        self.context: Dict[str, Any] = {}
+        logger.debug("khởi tạo ConversationData")
 
-# --- In-memory Storage for Conversations ---
+    def add_message(self, role: str, content: str):
+        """thêm tin nhắn vào lịch sử cuộc trò chuyện"""
+        api_role = "model" if role == "assistant" else role
+        self.history.append(Content(role=api_role, parts=[Part(text=content)]))
 
-# A simple dictionary to store active conversations.
-# In a production environment, this should be replaced with a persistent storage like Redis.
-conversations: Dict[str, ConversationData] = {}
-CONVERSATION_TTL = timedelta(minutes=30)
+    def reset(self):
+        """reset lịch sử cuộc trò chuyện"""
+        self.history.clear()
+        self.context.clear()
+        logger.info("ConversationData đã được reset")
 
+class ConversationManager:
+    """quản lý tất cả cuộc trò chuyện đang diễn ra"""
+    def __init__(self):
+        self._conversations: Dict[str, ConversationData] = {}
+        logger.info("ConversationManager đã được khởi tạo")
 
-def cleanup_conversations():
-    """
-    Removes expired conversations from the in-memory dictionary to prevent memory leaks.
-    A conversation is considered expired if it's older than CONVERSATION_TTL.
-    """
-    current_time = datetime.now()
-    expired_ids = [
-        conv_id for conv_id, conv_data in conversations.items()
-        if current_time - conv_data.created_at > CONVERSATION_TTL
-    ]
-    for conv_id in expired_ids:
-        del conversations[conv_id]
+    def get_or_create_conversation(self, conversation_id: str) -> ConversationData:
+        """lấy hoặc tạo cuộc trò chuyện"""
+        if conversation_id not in self._conversations:
+            logger.info(f"tạo cuộc trò chuyện mới với ID: {conversation_id}")
+            self._conversations[conversation_id] = ConversationData()
+        return self._conversations[conversation_id]
 
-def get_or_create_conversation(conversation_id: str) -> ConversationData:
-    """
-    Retrieves an existing conversation by its ID or creates a new one if not found.
-    Also triggers a cleanup of expired conversations.
-    """
-    cleanup_conversations()
-    if conversation_id not in conversations:
-        conversations[conversation_id] = ConversationData(
-            conversation_id=conversation_id
-        )
-    return conversations[conversation_id] 
+# singleton instance
+conversation_manager = ConversationManager() 

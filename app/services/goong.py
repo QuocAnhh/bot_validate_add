@@ -8,15 +8,13 @@ from app.core.config import GOONG_API_KEY
 logger = logging.getLogger(__name__)
 
 class GoongMapsClient:
-    """A client for interacting with the Goong Maps Geocoding API."""
+    """tương tác với api goong"""
     def __init__(self, api_key: str):
         self.api_key = api_key
         self.base_url = "https://rsapi.goong.io"
     
     async def autocomplete(self, input_text: str) -> List[dict]:
-        """
-        Fetches address predictions from Goong's Place Autocomplete API.
-        """
+        """tìm kiếm địa điểm"""
         if not self.api_key:
             logger.error("Goong API key is not configured.")
             return []
@@ -40,9 +38,7 @@ class GoongMapsClient:
             return []
 
     async def get_place_details(self, place_id: str) -> Optional[dict]:
-        """
-        Fetches detailed information for a specific place_id from Goong's Place Detail API.
-        """
+        """lấy chi tiết địa điểm"""
         if not self.api_key:
             logger.error("Goong API key is not configured.")
             return None
