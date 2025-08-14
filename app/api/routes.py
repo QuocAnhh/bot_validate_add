@@ -15,29 +15,22 @@ logger = logging.getLogger(__name__)
 @router.post("/chat/stream")
 async def stream_chat_handler(request: StreamChatRequest):
     """
-    endpoint xử lý yêu cầu chat và stream response
+    Endpoint to handle streaming chat requests.
+    It retrieves or creates a conversation, then returns an EventSourceResponse
+    that streams the chatbot's responses.
     """
-    try:
-        # lấy hoặc tạo session
-        conv_data = conversation_manager.get_or_create_conversation(request.conversation_id)
+    # Get or create the conversation from the manager
+    conv_data = conversation_manager.get_or_create_conversation(request.conversation_id)
 
-        # logic chatbot
-        return EventSourceResponse(
-            chatbot_logic_generator(
-                conv_data=conv_data,
-                user_message=request.message,
-                conversation_id=request.conversation_id
-            )
+    # Return a streaming response that runs the chatbot logic
+    # Error handling is managed inside the generator itself.
+    return EventSourceResponse(
+        chatbot_logic_generator(
+            conv_data=conv_data,
+            user_message=request.message,
+            conversation_id=request.conversation_id
         )
-    except Exception as e:
-        logger.error(f"Error in stream_chat_handler: {e}", exc_info=True)
-        # trả về JSON response cho lỗi
-        error_msg = {"error": "An unexpected server error occurred."}
-        return StreamingResponse(
-            iter([f"data: {json.dumps(error_msg)}\n\n"]),
-            status_code=500,
-            media_type="text/event-stream"
-        )
+    )
 
 @router.get("/health")
 async def health_check():

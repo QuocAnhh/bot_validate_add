@@ -2,6 +2,7 @@ import logging
 from typing import Dict, List, Any
 
 from google.generativeai.protos import Content, Part
+from app.state.booking import BookingState
 
 logger = logging.getLogger(__name__)
 
@@ -10,6 +11,7 @@ class ConversationData:
     def __init__(self):
         self.history: List[Content] = []
         self.context: Dict[str, Any] = {}
+        self.booking_state = BookingState()
         logger.debug("khởi tạo ConversationData")
 
     def add_message(self, role: str, content: str):
@@ -21,6 +23,7 @@ class ConversationData:
         """reset lịch sử cuộc trò chuyện"""
         self.history.clear()
         self.context.clear()
+        self.booking_state = BookingState()
         logger.info("ConversationData đã được reset")
 
 class ConversationManager:

@@ -1,0 +1,7 @@
+request_timestamp,origin_address,origin_lat,origin_lng,destination_address,destination_lat,destination_lng,requested_departure_time
+2025-08-13T00:46:30.900433,"Aeon Mall Long Biên, Tầng 3, 27 Cổ Linh, Phường Long Biên, Quận Long Biên, Thành phố Hà Nội",21.026730129000043,105.89865209800007,"Toà nhà Sudico, HH3 Tower, Mễ Trì, P, Từ Liêm, Hà Nội",21.01630316970189,105.77959706948151,lúc 3h chiều ngày mai nhé
+2025-08-13T00:49:53.039931,"Aeon Mall Long Biên, Long Biên, Hà Nội",21.026730129000043,105.89865209800007,"Sảnh HH3 Sudico, Mễ Trì, Nam Từ Liêm, Hà Nội",21.015842345000067,105.78221987200004,15:00 14/08/2025
+2025-08-13T00:54:55.540442,"Nhà văn hóa cụm 1, Hà Nội",21.076369225000064,105.61695934100004,"319 Trần Cung, Hà Nội",21.05698705100008,105.78399679000006,9:00 AM 14/08/2025
+2025-08-13T00:58:33.537227,"Bến xe Thường Tín, Thường Tín, Hà Nội",20.864475988000038,105.86683406500003,"319 Trần Cung, Bắc Từ Liêm, Hà Nội",21.05698705100008,105.78399679000006,3h chiều ngày kia
+2025-08-13T14:35:30.806736,"Tòa HH3 Sudico Mễ Trì, Nam Từ Liêm, Hà Nội",21.0162596,105.7795574,"Sân vận động Lạch Tray, Ngô Quyền, Hải Phòng",20.851418832000036,106.68836870700005,8:30 AM 15/08/2025
+2025-08-13T14:36:43.059109,"Toà nhà Sudico, HH3 Tower, Mễ Trì, P, Từ Liêm, Hà Nội",21.01630316970189,105.77959706948151,"Sân vận động Lạch Tray, Phường Lạch Tray, Quận Ngô Quyền, Thành phố Hải Phòng",20.851418832000036,106.68836870700005,08:30 AM 15/08/2025
