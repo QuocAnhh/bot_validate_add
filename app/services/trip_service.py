@@ -27,6 +27,7 @@ def extract_city_from_address(address: str) -> str:
         'hồ chí minh': ['hồ chí minh', 'sài gòn', 'tp hcm', 'quận 1', 'quận 2', 'quận 3', 'thủ đức', 'bình thạnh'],
         'đà nẵng': ['đà nẵng', 'danang', 'hải châu', 'thanh khê', 'sơn trà', 'ngũ hành sơn'],
         'cần thơ': ['cần thơ', 'cantho', 'ninh kiều', 'bình thủy', 'cái răng'],
+        'thái nguyên': ['thái nguyên', 'thainguyen', 'sông công', 'phổ yên'],
     }
     
     address_lower = address.lower()
@@ -45,6 +46,33 @@ def _check_route_exists(session: Session, origin_city: str, dest_city: str) -> b
             Trip.destination_city.ilike(f"%{dest_city}%")
         ).exists()
     ).scalar()
+
+def get_available_trips_info(session: Session) -> List[Dict[str, Any]]:
+    """
+    lấy thông tin các chuyến có sẵn trong database và trả về 
+    """
+    trips = session.query(Trip.origin_city, Trip.destination_city, Trip.departure_time).distinct().all()
+    
+    available_trips = {}
+    for origin, destination, time in trips:
+        route = f"{origin.title()} - {destination.title()}"
+        if route not in available_trips:
+            available_trips[route] = []
+        
+        # chỉ thêm thời gian nếu chưa tồn tại
+        if time and time.strftime('%H:%M') not in available_trips[route]:
+            available_trips[route].append(time.strftime('%H:%M'))
+
+    # format lại cho đẹp
+    result = []
+    for route, times in available_trips.items():
+        result.append(f"{route} lúc {', '.join(sorted(times))}")
+        
+    return [{
+        "status": "NO_ROUTE_FOUND",
+        "available_trips": result
+    }]
+
 
 def find_trips(origin: str, destination: str, departure_dt: datetime) -> List[Dict[str, Any]]:
     """
@@ -74,7 +102,7 @@ def find_trips(origin: str, destination: str, departure_dt: datetime) -> List[Di
                 }]
             else:
                 logger.info(f"No route found for {origin_city} -> {dest_city}")
-                return []
+                return get_available_trips_info(session)
     except SQLAlchemyError as e:
         logger.error(f"DB error in find_trips: {e}")
         return [] 
