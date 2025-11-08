@@ -49,20 +49,13 @@ async def _handle_search_address(
 ) -> Part:
     """xử lý lệnh gọi tool 'search_address_in_vietnam'"""
     query = args.get("query", "")
-    # The goong_client now returns a structured dictionary with a status
     tool_results = await goong_client.autocomplete(query)
-    
-    # Pass the entire structured result to the LLM
     return Part(
         function_response={
             "name": "search_address_in_vietnam",
             "response": tool_results,
         }
     )
-
-
-
-
 
 def _parse_departure_time_vi(text_time: str) -> Optional[datetime]:
     """
@@ -205,9 +198,7 @@ async def _handle_find_trips(
         departure_dt=parsed_dt,
     )
 
-    # If a route exists, log the request details to CSV
     if trips and trips[0].get("status") == "ROUTE_EXISTS":
-        # Run async tasks concurrently for better performance
         origin_coords_task = goong_client.get_coords_from_address(conv_data.booking_state.origin)
         dest_coords_task = goong_client.get_coords_from_address(conv_data.booking_state.destination)
         
@@ -305,11 +296,10 @@ async def chatbot_logic_generator(conv_data: ConversationData, user_message: str
             )
             
             if not response.candidates:
-                # Handle cases where the model returns no candidates (e.g., safety filters)
                 logger.warning(f"Gemini API returned no candidates for conv {conversation_id}. Feedback: {response.prompt_feedback}")
                 error_payload = {"error": "Xin lỗi, BIVA không thể xử lý yêu cầu này. Vui lòng thử lại với một câu hỏi khác."}
                 yield {"data": json.dumps(error_payload)}
-                break # Exit the loop
+                break
 
             response_content = response.candidates[0].content
 
