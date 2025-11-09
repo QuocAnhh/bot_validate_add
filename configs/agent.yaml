@@ -15,16 +15,22 @@ model:
   temperature: 0.7
   max_tokens: 2000
 
-# Memory (disabled for now)
+# Memory configuration
 memory:
-  enabled: false
+  enabled: true  # Enable memory
   type: "non_parametric"
   top_k: 4
+  embedding_model: "sentence-transformers/all-MiniLM-L6-v2"
+  storage_path: "memory/cases.jsonl"
+  device: "auto"  # auto, cpu, cuda
+  filter_negative: true  # Filter out negative cases (reward=0) when retrieving
+  include_negative_examples: false  # Include negative examples in prompt (only if filter_negative=false)
+  max_negative_examples: 2  # Max negative examples to show
 
 # Conversation settings
 conversation:
   max_steps: 4
-  enable_memory_injection: false
+  enable_memory_injection: true  # Enable memory injection into prompt
 
 # Prompt template (default: agent.txt)
 prompt_template: "agent"

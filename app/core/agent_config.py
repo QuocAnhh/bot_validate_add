@@ -17,7 +17,12 @@ class MemoryConfig(BaseModel):
     type: str = "non_parametric"  # non_parametric or parametric
     top_k: int = 4
     embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
-    storage_type: str = "database"  # database or jsonl
+    storage_type: str = "jsonl"  # database or jsonl
+    storage_path: str = "memory/cases.jsonl"  # Path to JSONL file
+    device: str = "auto"  # auto, cpu, cuda
+    filter_negative: bool = True  # Filter out negative cases (reward=0) when retrieving
+    include_negative_examples: bool = False  # Include negative examples in prompt (if not filtered)
+    max_negative_examples: int = 2  # Max negative examples to show
 
 
 class ModelConfig(BaseModel):

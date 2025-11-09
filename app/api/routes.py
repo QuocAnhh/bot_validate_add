@@ -1,12 +1,16 @@
 """Main API routes"""
 from fastapi import APIRouter
 from app.api.chat import router as chat_router
+from app.api.evaluation import router as evaluation_router
 from app.ui.routes import router as ui_router
 
 router = APIRouter()
 
 # Include chat routes
 router.include_router(chat_router, prefix="/api", tags=["chat"])
+
+# Include evaluation routes
+router.include_router(evaluation_router, tags=["evaluation"])
 
 # Include UI routes
 router.include_router(ui_router, tags=["ui"])
