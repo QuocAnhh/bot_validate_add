@@ -11,15 +11,6 @@ venv/
 env/
 ENV/
 
-# Environment
-.env
-.env.local
-.env.*.local
-
-# Logs
-logs/
-*.log
-
 # IDE
 .vscode/
 .idea/
@@ -27,18 +18,38 @@ logs/
 *.swo
 *~
 
-# OS
-.DS_Store
-Thumbs.db
+# Logs
+logs/
+*.log
 
-# Project specific
-memento/
-*.csv
-*.jsonl
-confirmed_trip_requests.csv
+# Environment
+.env
+.env.local
+
+# Git
+.git/
+.gitignore
 
 # Docker
-.docker/
+docker/
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Tests
+tests/
+test_*.py
+*_test.py
+
+# Documentation
+*.md
+docs/
+
+# Other
+.DS_Store
+*.csv
+*.jsonl
 
 # BIVA repo (reference only)
 biva_single_prompt_bot_with_groq_summary-main/
+

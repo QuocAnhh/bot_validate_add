@@ -1,0 +1,2 @@
+"""Base use case classes"""
+

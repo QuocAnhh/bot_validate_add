@@ -1,0 +1,31 @@
+# Single agent configuration
+# Simple prompt-only agent, no tools
+
+agent:
+  name: "Assistant"
+  description: "Trợ lý AI thông minh"
+
+# No tools needed for now
+tools: []
+
+# Model settings
+model:
+  provider: "openai"
+  model_name: "gpt-4o-mini"
+  temperature: 0.7
+  max_tokens: 2000
+
+# Memory (disabled for now)
+memory:
+  enabled: false
+  type: "non_parametric"
+  top_k: 4
+
+# Conversation settings
+conversation:
+  max_steps: 4
+  enable_memory_injection: false
+
+# Prompt template (default: agent.txt)
+prompt_template: "agent"
+

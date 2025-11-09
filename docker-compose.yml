@@ -1,0 +1,34 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: bot_nhaXe
+    ports:
+      - "${PORT:-8000}:8000"
+    volumes:
+      # Mount configs for easy updates
+      - ./configs:/app/configs:ro
+      # Mount logs for persistence
+      - ./logs:/app/logs
+      # Mount prompts for easy updates
+      - ./app/prompts:/app/app/prompts:ro
+    env_file:
+      - .env
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    networks:
+      - bot_nhaXe_network
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import requests; requests.get('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  bot_nhaXe_network:
+    driver: bridge
+

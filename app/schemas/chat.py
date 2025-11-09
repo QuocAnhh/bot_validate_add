@@ -1,10 +1,14 @@
 from pydantic import BaseModel
 from typing import Optional
 
-# payload gửi lên live-demo
+# Chat request schema
 class StreamChatRequest(BaseModel):
     message: str
     conversation_id: str
+    agent_name: Optional[str] = None  # Ignored (single agent only)
+    config_path: Optional[str] = None  # Full path to config file (overrides agent_name)
+    use_tools: Optional[bool] = False  # Whether to use tools
+    # Legacy fields (optional)
     customer_phone: Optional[str] = None
     callcenter_phone: Optional[str] = None
     request_from: Optional[str] = None

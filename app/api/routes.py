@@ -1,37 +1,33 @@
-from fastapi import APIRouter, Depends
-from fastapi.responses import StreamingResponse
-import json
-from datetime import datetime
-import logging
-
-from app.schemas.chat import StreamChatRequest
-from app.logic.chatbot import chatbot_logic_generator
-from app.state.manager import conversation_manager
-from sse_starlette.sse import EventSourceResponse
+"""Main API routes"""
+from fastapi import APIRouter
+from app.api.chat import router as chat_router
+from app.ui.routes import router as ui_router
 
 router = APIRouter()
-logger = logging.getLogger(__name__)
 
-@router.post("/chat/stream")
-async def stream_chat_handler(request: StreamChatRequest):
-    """
-    Endpoint to handle streaming chat requests.
-    It retrieves or creates a conversation, then returns an EventSourceResponse
-    that streams the chatbot's responses.
-    """
-    # Get or create the conversation from the manager
-    conv_data = conversation_manager.get_or_create_conversation(request.conversation_id)
+# Include chat routes
+router.include_router(chat_router, prefix="/api", tags=["chat"])
 
-    # Return a streaming response that runs the chatbot logic
-    # Error handling is managed inside the generator itself.
-    return EventSourceResponse(
-        chatbot_logic_generator(
-            conv_data=conv_data,
-            user_message=request.message,
-            conversation_id=request.conversation_id
-        )
-    )
+# Include UI routes
+router.include_router(ui_router, tags=["ui"])
+
 
 @router.get("/health")
 async def health_check():
-    return {"status": "ok"} 
+    """Health check endpoint"""
+    return {"status": "ok", "service": "bot_nhaXe"}
+
+
+@router.get("/")
+async def root():
+    """Root endpoint"""
+    return {
+        "message": "bot_nhaXe API - Single Agent",
+        "version": "1.0.0",
+        "endpoints": {
+            "ui": "/ui",
+            "chat": "/api/chat/stream",
+            "agent_info": "/api/agents/agent",
+            "health": "/health"
+        }
+    }

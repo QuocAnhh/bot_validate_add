@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>bot_nhaXe - Agent Testing UI</title>
+    <link rel="stylesheet" href="/ui/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🤖 bot_nhaXe - AI Assistant</h1>
+            <p class="subtitle">Simple prompt-only AI agent</p>
+        </header>
+
+        <div class="controls">
+            <!-- Single agent - no selection needed -->
+            <div class="agent-info">
+                <span id="agent-name">Assistant</span>
+            </div>
+            <div class="conversation-controls">
+                <input type="text" id="conversation-id" placeholder="Conversation ID (optional)" value="test-123">
+                <button id="reset-conversation">Reset Conversation</button>
+            </div>
+        </div>
+
+        <div class="chat-container">
+            <div class="chat-messages" id="chat-messages">
+                <div class="message system">
+                    <p>Welcome! Start chatting with your AI assistant.</p>
+                </div>
+            </div>
+            
+            <div class="chat-input-container">
+                <div class="input-wrapper">
+                    <input 
+                        type="text" 
+                        id="message-input" 
+                        placeholder="Type your message here..." 
+                        autocomplete="off"
+                    >
+                    <button id="send-button">Send</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-panel">
+            <h3>Prompt Info</h3>
+            <div id="agent-info">
+                <p>Simple prompt-only agent</p>
+                <p><strong>Model:</strong> <span id="model-name">gpt-4o-mini</span></p>
+                <p><strong>No tools</strong></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="/ui/static/js/chat.js"></script>
+</body>
+</html>
+
